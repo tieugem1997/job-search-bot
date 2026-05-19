@@ -133,9 +133,10 @@ async function runCustomSearch(keywords, chatId) {
   );
 
   const allJobs = [];
+  const opts = { customSearch: true };
   for (const [name, fn] of [["ITViec", scrapeITViec], ["TopDev", scrapeTopDev], ["LinkedIn", scrapeLinkedIn]]) {
     try {
-      const jobs = await fn(keywords);
+      const jobs = await fn(keywords, opts);
       logger.info(`  ${name}: ${jobs.length}`);
       allJobs.push(...jobs);
     } catch (err) {
@@ -157,13 +158,22 @@ async function runCustomSearch(keywords, chatId) {
   }
 
   // Keyword scoring (loose match, no CV filtering)
-  const kwLower = keywords.map((k) => k.toLowerCase());
+  // Split phrases into individual words for flexible matching
+  // e.g. "data analyst intern viet nam" → ["data", "analyst", "intern"] (skip location/stop words)
+  const SKIP_WORDS = new Set(["viet", "nam", "vietnam", "the", "and", "for", "with"]);
+  const scoreWords = keywords
+    .flatMap((k) => k.toLowerCase().split(/\s+/))
+    .filter((w) => w.length > 2 && !SKIP_WORDS.has(w));
+
   const scored = uniqueJobs.map((j) => {
     const searchable = `${j.title} ${j.description} ${j.tags.join(" ")}`.toLowerCase();
-    const matched = kwLower.filter((k) => searchable.includes(k));
-    const titleBonus = kwLower.some((k) => j.title.toLowerCase().includes(k)) ? 20 : 0;
-    j.matchPercent = Math.min(matched.length * 25 + titleBonus, 100) || 10;
-    j.matchReason = matched.length ? `Từ khóa: ${matched.join(", ")}` : "Kết quả tìm kiếm";
+    const titleLower = j.title.toLowerCase();
+    const matched = scoreWords.filter((w) => searchable.includes(w));
+    const titleBonus = scoreWords.some((w) => titleLower.includes(w)) ? 20 : 0;
+    j.matchPercent = Math.min(matched.length * 20 + titleBonus, 100) || 10;
+    j.matchReason = matched.length
+      ? `Từ khóa: ${[...new Set(matched)].slice(0, 4).join(", ")}`
+      : "Kết quả tìm kiếm";
     return j;
   });
 

@@ -3,23 +3,28 @@ import { load } from "cheerio";
 import { Job } from "./base.js";
 import { DEFAULT_HEADERS, REQUEST_TIMEOUT_MS, REQUEST_DELAY_MS, SEARCH_KEYWORDS } from "../config.js";
 
-// LinkedIn guest: Vietnam (geoId=104195383), remote+hybrid (f_WT=2,3), part-time+contract (f_JT=P,C)
-const SEARCH_URL =
+// Daily auto: Vietnam, remote+hybrid, part-time+contract
+const SEARCH_URL_FILTERED =
   "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search" +
   "?keywords={kw}&geoId=104195383&f_WT=2%2C3&f_JT=P%2CC&start={start}&count=25";
+// Custom search: Vietnam, all work types, all job types
+const SEARCH_URL_ALL =
+  "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search" +
+  "?keywords={kw}&geoId=104195383&start={start}&count=25";
 
 const DEFAULT_KEYWORDS = [
   "Power Platform", "Power BI", "SharePoint", "Power Automate",
   "Data Engineer", "Microsoft 365",
 ];
 
-export async function scrapeLinkedIn(keywords = DEFAULT_KEYWORDS) {
+export async function scrapeLinkedIn(keywords = DEFAULT_KEYWORDS, { customSearch = false } = {}) {
   const results = [];
   const seen = new Set();
   const searchList = (keywords === SEARCH_KEYWORDS ? DEFAULT_KEYWORDS : keywords).slice(0, 6);
+  const urlTemplate = customSearch ? SEARCH_URL_ALL : SEARCH_URL_FILTERED;
 
   for (const kw of searchList) {
-    const jobs = await searchLinkedIn(kw);
+    const jobs = await searchLinkedIn(kw, 2, urlTemplate);
     for (const job of jobs) {
       if (seen.has(job.url)) continue;
       seen.add(job.url);
@@ -32,13 +37,13 @@ export async function scrapeLinkedIn(keywords = DEFAULT_KEYWORDS) {
   return results;
 }
 
-async function searchLinkedIn(keyword, maxPages = 2) {
+async function searchLinkedIn(keyword, maxPages = 2, urlTemplate = SEARCH_URL_FILTERED) {
   const results = [];
   const encoded = encodeURIComponent(keyword);
 
   for (let page = 0; page < maxPages; page++) {
     const start = page * 25;
-    const url = SEARCH_URL.replace("{kw}", encoded).replace("{start}", start);
+    const url = urlTemplate.replace("{kw}", encoded).replace("{start}", start);
 
     try {
       const res = await axios.get(url, {

@@ -4,22 +4,25 @@ import { Job } from "./base.js";
 import { DEFAULT_HEADERS, REQUEST_TIMEOUT_MS, REQUEST_DELAY_MS, SEARCH_KEYWORDS } from "../config.js";
 
 const BASE_URL = "https://itviec.com";
-// Search remote + part-time + freelance job types
-const SEARCH_URL =
+// Daily auto search: filter remote/part-time/freelance
+const SEARCH_URL_FILTERED =
   `${BASE_URL}/it-jobs?search[keywords]={kw}` +
   `&search[job_types][]=remote-job` +
   `&search[job_types][]=parttime-job` +
   `&search[job_types][]=freelance`;
+// Custom /search: no job type filter — catches all types (intern, full-time, etc.)
+const SEARCH_URL_ALL = `${BASE_URL}/it-jobs?search[keywords]={kw}`;
 
 const DEFAULT_KEYWORDS = ["Power Platform", "SharePoint", "Power BI", "Data Engineer", "Power Automate"];
 
-export async function scrapeITViec(keywords = DEFAULT_KEYWORDS) {
+export async function scrapeITViec(keywords = DEFAULT_KEYWORDS, { customSearch = false } = {}) {
   const results = [];
   const seen = new Set();
   const searchList = keywords === SEARCH_KEYWORDS ? DEFAULT_KEYWORDS : keywords;
+  const urlTemplate = customSearch ? SEARCH_URL_ALL : SEARCH_URL_FILTERED;
 
   for (const kw of searchList) {
-    const jobs = await fetchITViec(kw);
+    const jobs = await fetchITViec(kw, urlTemplate);
     for (const job of jobs) {
       if (seen.has(job.url)) continue;
       seen.add(job.url);
@@ -32,8 +35,8 @@ export async function scrapeITViec(keywords = DEFAULT_KEYWORDS) {
   return results;
 }
 
-async function fetchITViec(keyword) {
-  const url = SEARCH_URL.replace("{kw}", encodeURIComponent(keyword));
+async function fetchITViec(keyword, urlTemplate = SEARCH_URL_FILTERED) {
+  const url = urlTemplate.replace("{kw}", encodeURIComponent(keyword));
   try {
     const res = await axios.get(url, { headers: DEFAULT_HEADERS, timeout: REQUEST_TIMEOUT_MS });
     const jobs = extractNextData(res.data);

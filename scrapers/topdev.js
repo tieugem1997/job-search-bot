@@ -4,26 +4,36 @@ import { Job } from "./base.js";
 import { DEFAULT_HEADERS, REQUEST_TIMEOUT_MS, REQUEST_DELAY_MS, SEARCH_KEYWORDS } from "../config.js";
 
 const BASE_URL = "https://topdev.vn";
-// Each type needs a separate request
-const JOB_TYPES = ["remote-jobs", "part-time", "freelance"];
-const SEARCH_URL = `${BASE_URL}/it-jobs?q={kw}&type={type}`;
+const JOB_TYPES_FILTERED = ["remote-jobs", "part-time", "freelance"];
+const SEARCH_URL_FILTERED = `${BASE_URL}/it-jobs?q={kw}&type={type}`;
+const SEARCH_URL_ALL = `${BASE_URL}/it-jobs?q={kw}`;
 
 const DEFAULT_KEYWORDS = ["Power Platform", "SharePoint", "Power BI", "Data Engineer", "Power Automate"];
 
-export async function scrapeTopDev(keywords = DEFAULT_KEYWORDS) {
+export async function scrapeTopDev(keywords = DEFAULT_KEYWORDS, { customSearch = false } = {}) {
   const results = [];
   const seen = new Set();
   const searchList = keywords === SEARCH_KEYWORDS ? DEFAULT_KEYWORDS : keywords;
 
   for (const kw of searchList) {
-    for (const type of JOB_TYPES) {
-      const jobs = await fetchTopDev(kw, type);
+    if (customSearch) {
+      const jobs = await fetchTopDev(kw, null, SEARCH_URL_ALL);
       for (const job of jobs) {
         if (seen.has(job.url)) continue;
         seen.add(job.url);
         results.push(job);
       }
       await sleep(REQUEST_DELAY_MS);
+    } else {
+      for (const type of JOB_TYPES_FILTERED) {
+        const jobs = await fetchTopDev(kw, type, SEARCH_URL_FILTERED);
+        for (const job of jobs) {
+          if (seen.has(job.url)) continue;
+          seen.add(job.url);
+          results.push(job);
+        }
+        await sleep(REQUEST_DELAY_MS);
+      }
     }
   }
 
@@ -31,15 +41,16 @@ export async function scrapeTopDev(keywords = DEFAULT_KEYWORDS) {
   return results;
 }
 
-async function fetchTopDev(keyword, type = "remote-jobs") {
-  const url = SEARCH_URL.replace("{kw}", encodeURIComponent(keyword)).replace("{type}", type);
+async function fetchTopDev(keyword, type = null, urlTemplate = SEARCH_URL_ALL) {
+  let url = urlTemplate.replace("{kw}", encodeURIComponent(keyword));
+  if (type) url = url.replace("{type}", type);
   try {
     const res = await axios.get(url, { headers: DEFAULT_HEADERS, timeout: REQUEST_TIMEOUT_MS });
     const jobs = extractNextData(res.data);
     if (jobs.length) return jobs;
     return parseHtmlCards(res.data);
   } catch (err) {
-    console.warn(`[TopDev] '${keyword}' (${type}): ${err.message}`);
+    console.warn(`[TopDev] '${keyword}': ${err.message}`);
     return [];
   }
 }
