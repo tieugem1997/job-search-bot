@@ -1,0 +1,23 @@
+{
+  "name": "job-search-automation",
+  "version": "1.0.0",
+  "description": "Daily automated job search: Power Platform / SharePoint / Power BI → Telegram",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "start": "node bot.js",
+    "start:once": "node main.js",
+    "test": "node main.js --test",
+    "reset": "node main.js --reset-cache"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.40.0",
+    "axios": "^1.7.0",
+    "cheerio": "^1.0.0",
+    "dotenv": "^16.4.0",
+    "rss-parser": "^3.13.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,4 @@
+.env
+node_modules/
+data/sent_jobs.json
+data/logs/

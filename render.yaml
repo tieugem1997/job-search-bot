@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: job-search-bot
+    runtime: node
+    buildCommand: npm install
+    startCommand: node bot.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false   # nhập thủ công trên Render dashboard
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false   # tùy chọn - dùng Claude AI để match CV
+    healthCheckPath: /
+    # Render free tier: service ngủ sau 15 phút không có request.
+    # Bot dùng Telegram polling nên HTTP server chỉ để health check.
+    # Để bot chạy 24/7 không bị ngủ → dùng gói Starter ($7/tháng)
+    # hoặc dùng uptimerobot.com ping mỗi 5 phút (miễn phí)
