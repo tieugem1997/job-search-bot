@@ -296,6 +296,18 @@ async function poll() {
   setTimeout(poll, 1000);
 }
 
+// ── Self-ping: prevent Render free tier sleep (resets 15-min inactivity timer) ─
+function startSelfPing() {
+  const publicUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${process.env.PORT || 3000}`;
+  setInterval(async () => {
+    try {
+      await axios.get(publicUrl, { timeout: 10000 });
+      logger.info(`[SelfPing] OK → ${publicUrl}`);
+    } catch { /* ignore */ }
+  }, 9 * 60 * 1000); // every 9 min — well before Render's 15-min sleep threshold
+  logger.info(`[SelfPing] Started — pinging ${publicUrl} every 9 min`);
+}
+
 // ── Cron: daily 8:00 AM Vietnam time (UTC+7 = UTC 01:00) ─────────────────────
 function startCron() {
   let lastRan = "";
@@ -331,6 +343,7 @@ async function main() {
     res.end("Job Search Bot is running");
   }).listen(port, () => logger.info(`HTTP server on :${port}`));
 
+  startSelfPing();
   startCron();
 
   logger.info("📡 Starting Telegram polling...");
