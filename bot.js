@@ -120,13 +120,22 @@ async function runDailySearch() {
   logger.info(`✓ Daily search done`);
 }
 
+// Words to strip from scraper queries (location/stop words that hurt search precision)
+const LOCATION_STOP = /\b(viet\s*nam|vietnam|ha\s*noi|ho\s*chi\s*minh|hcm|hà\s*nội|tp\.?\s*hcm|remote|part[- ]?time|freelance|the|and|for|with|in|at)\b/gi;
+
 // ── Custom search for /search command ─────────────────────────────────────────
 async function runCustomSearch(keywords, chatId) {
   const { scrapeITViec, scrapeTopDev, scrapeLinkedIn } = await import("./scrapers/index.js");
   const { SCORING } = await import("./config.js");
   const { sendResults } = await import("./notifiers/telegram.js");
 
-  logger.info(`Custom search: [${keywords.join(", ")}]`);
+  // Clean location/stop words so scrapers get a precise query
+  // "data analyst intern viet nam" → "data analyst intern"
+  const scraperKeywords = keywords
+    .map((k) => k.replace(LOCATION_STOP, " ").replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+
+  logger.info(`Custom search: [${keywords.join(", ")}] → scraper: [${scraperKeywords.join(", ")}]`);
   await sendTelegram(
     `🔍 Đang tìm: <b>${escHtml(keywords.join(", "))}</b>\n⏳ Vui lòng chờ 30–60 giây...`,
     chatId
@@ -136,7 +145,7 @@ async function runCustomSearch(keywords, chatId) {
   const opts = { customSearch: true };
   for (const [name, fn] of [["ITViec", scrapeITViec], ["TopDev", scrapeTopDev], ["LinkedIn", scrapeLinkedIn]]) {
     try {
-      const jobs = await fn(keywords, opts);
+      const jobs = await fn(scraperKeywords, opts);
       logger.info(`  ${name}: ${jobs.length}`);
       allJobs.push(...jobs);
     } catch (err) {
@@ -157,13 +166,11 @@ async function runCustomSearch(keywords, chatId) {
     return;
   }
 
-  // Keyword scoring (loose match, no CV filtering)
-  // Split phrases into individual words for flexible matching
-  // e.g. "data analyst intern viet nam" → ["data", "analyst", "intern"] (skip location/stop words)
-  const SKIP_WORDS = new Set(["viet", "nam", "vietnam", "the", "and", "for", "with"]);
+  // Score using individual words from the ORIGINAL query (include location context for relevance)
+  const SCORE_SKIP = new Set(["viet", "nam", "the", "and", "for", "with", "in", "at"]);
   const scoreWords = keywords
     .flatMap((k) => k.toLowerCase().split(/\s+/))
-    .filter((w) => w.length > 2 && !SKIP_WORDS.has(w));
+    .filter((w) => w.length > 2 && !SCORE_SKIP.has(w));
 
   const scored = uniqueJobs.map((j) => {
     const searchable = `${j.title} ${j.description} ${j.tags.join(" ")}`.toLowerCase();
