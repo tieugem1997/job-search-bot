@@ -3,7 +3,7 @@
  * Mode 1: Keyword scoring (fast, free, always available)
  * Mode 2: Claude Haiku scoring (accurate, requires ANTHROPIC_API_KEY)
  */
-import { CV_PROFILE, SCORING } from "../config.js";
+import { CV_PROFILE, SCORING, matchesAny } from "../config.js";
 
 // Pre-build scoring list: [keyword, points]
 const SKILL_WEIGHTS = [
@@ -57,19 +57,17 @@ function keywordMatch(job) {
   const matchedSkills = [];
 
   for (const [skill, pts] of SKILL_WEIGHTS) {
-    if (searchable.includes(skill)) {
+    if (matchesAny(searchable, [skill])) {
       rawScore += pts;
       matchedSkills.push(skill);
     }
   }
 
-  // Title bonus: any primary skill in title
+  // Title bonus: any matched skill appears in the job title
+  // (áp dụng cho cả secondary — job part-time VN thường chỉ có title, không có description)
   let titleBonus = 0;
-  for (const [skill] of SKILL_WEIGHTS.slice(0, CV_PROFILE.skills.primary.length)) {
-    if (titleLower.includes(skill)) {
-      titleBonus = SCORING.titleBonusPts;
-      break;
-    }
+  if (matchedSkills.some((skill) => matchesAny(titleLower, [skill]))) {
+    titleBonus = SCORING.titleBonusPts;
   }
 
   const percent = Math.min(rawScore + titleBonus, 100);

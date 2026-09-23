@@ -4,16 +4,18 @@ import { Job } from "./base.js";
 import { DEFAULT_HEADERS, REQUEST_TIMEOUT_MS, REQUEST_DELAY_MS, SEARCH_KEYWORDS } from "../config.js";
 
 const BASE_URL = "https://itviec.com";
-// Daily auto search: filter remote/part-time/freelance
+// Daily auto search: chỉ part-time + freelance (job chính 8h-18h UTC+7)
 const SEARCH_URL_FILTERED =
   `${BASE_URL}/it-jobs?search[keywords]={kw}` +
-  `&search[job_types][]=remote-job` +
   `&search[job_types][]=parttime-job` +
   `&search[job_types][]=freelance`;
 // Custom /search: no job type filter — catches all types (intern, full-time, etc.)
 const SEARCH_URL_ALL = `${BASE_URL}/it-jobs?search[keywords]={kw}`;
 
-const DEFAULT_KEYWORDS = ["Power Platform", "SharePoint", "Power BI", "Data Engineer", "Power Automate"];
+const DEFAULT_KEYWORDS = [
+  "Power Platform", "SharePoint", "Power BI", "Data Engineer", "Power Automate",
+  "Data Analyst", "AI Engineer", "Machine Learning",
+];
 
 export async function scrapeITViec(keywords = DEFAULT_KEYWORDS, { customSearch = false } = {}) {
   const results = [];

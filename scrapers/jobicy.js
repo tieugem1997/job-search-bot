@@ -1,9 +1,11 @@
 import axios from "axios";
 import { Job } from "./base.js";
-import { DEFAULT_HEADERS, JOBICY_API, REQUEST_TIMEOUT_MS, SEARCH_KEYWORDS } from "../config.js";
+import {
+  DEFAULT_HEADERS, JOBICY_API, REQUEST_TIMEOUT_MS,
+  SEARCH_KEYWORDS, FLEX_JOB_TYPES, matchesAny,
+} from "../config.js";
 
 export async function scrapeJobicy(keywords = SEARCH_KEYWORDS) {
-  const kwLower = keywords.map((k) => k.toLowerCase());
   const results = [];
 
   try {
@@ -14,10 +16,13 @@ export async function scrapeJobicy(keywords = SEARCH_KEYWORDS) {
     });
     const rawJobs = res.data?.jobs || [];
     for (const j of rawJobs) {
+      // Job chính 8h-18h → chỉ lấy part-time / freelance / contract
+      const rawTypes = Array.isArray(j.jobType) ? j.jobType : j.jobType ? [j.jobType] : ["remote"];
+      if (!rawTypes.some((t) => matchesAny(String(t), FLEX_JOB_TYPES))) continue;
       const job = parseJobicyJob(j);
       if (!job) continue;
       const searchable = `${job.title} ${job.description} ${job.tags.join(" ")}`.toLowerCase();
-      if (kwLower.some((kw) => searchable.includes(kw))) results.push(job);
+      if (matchesAny(searchable, keywords)) results.push(job);
     }
   } catch (err) {
     console.warn(`[Jobicy] failed: ${err.message}`);

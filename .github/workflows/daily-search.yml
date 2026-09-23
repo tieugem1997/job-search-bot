@@ -1,0 +1,48 @@
+name: Daily Job Search (8AM VN)
+
+# Chạy trên server GitHub — không cần laptop bật.
+# 08:05 giờ Việt Nam (UTC+7) mỗi ngày = 01:05 UTC
+on:
+  schedule:
+    - cron: '5 1 * * *'
+  workflow_dispatch:   # chạy tay: repo → Actions → Daily Job Search → Run workflow
+
+permissions:
+  contents: write      # cần để commit ngược lại data/sent_jobs.json (dedup cache)
+
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Tạo .env từ GitHub Secrets
+        run: |
+          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
+          echo "TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}" >> .env
+          if [ -n "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+            echo "ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}" >> .env
+          fi
+
+      - name: Chạy tìm job & gửi Telegram
+        run: node main.js
+
+      # Lưu dedup cache về repo để lần chạy sau không gửi lại job cũ
+      - name: Commit dedup cache
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/sent_jobs.json
+          if git diff --cached --quiet; then
+            echo "Cache không thay đổi"
+          else
+            git commit -m "chore: update sent_jobs cache" && git push
+          fi

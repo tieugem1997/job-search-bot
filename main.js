@@ -53,16 +53,14 @@ function saveSentIds(ids) {
 
 // ── Scraper runner ─────────────────────────────────────────────────────────────
 async function runScrapers() {
-  const { scrapeRemoteOK, scrapeJobicy, scrapeWeWorkRemotely, scrapeLinkedIn, scrapeITViec, scrapeTopDev } =
+  const { scrapeRemoteOK, scrapeJobicy, scrapeLinkedIn, scrapeITViec } =
     await import("./scrapers/index.js");
 
   const scrapers = [
     ["RemoteOK", scrapeRemoteOK],
     ["Jobicy", scrapeJobicy],
-    ["WeWorkRemotely", scrapeWeWorkRemotely],
     ["LinkedIn", scrapeLinkedIn],
     ["ITViec", scrapeITViec],
-    ["TopDev", scrapeTopDev],
   ];
 
   const allJobs = [];

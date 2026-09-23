@@ -3,18 +3,18 @@ import { load } from "cheerio";
 import { Job } from "./base.js";
 import { DEFAULT_HEADERS, REQUEST_TIMEOUT_MS, REQUEST_DELAY_MS, SEARCH_KEYWORDS } from "../config.js";
 
-// Daily auto: Vietnam, remote+hybrid, part-time+contract
+// Daily auto: Vietnam, chỉ part-time + contract (job chính 8h-18h UTC+7)
 const SEARCH_URL_FILTERED =
   "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search" +
-  "?keywords={kw}&geoId=104195383&f_WT=2%2C3&f_JT=P%2CC&start={start}&count=25";
+  "?keywords={kw}&geoId=104195383&f_JT=P%2CC&start={start}&count=25";
 // Custom search: Vietnam, all work types, all job types
 const SEARCH_URL_ALL =
   "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search" +
   "?keywords={kw}&geoId=104195383&start={start}&count=25";
 
 const DEFAULT_KEYWORDS = [
-  "Power Platform", "Power BI", "SharePoint", "Power Automate",
-  "Data Engineer", "Microsoft 365",
+  "Power Platform", "Power BI", "SharePoint",
+  "Data Engineer", "Data Analyst", "AI Engineer",
 ];
 
 export async function scrapeLinkedIn(keywords = DEFAULT_KEYWORDS, { customSearch = false } = {}) {

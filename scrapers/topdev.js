@@ -4,11 +4,15 @@ import { Job } from "./base.js";
 import { DEFAULT_HEADERS, REQUEST_TIMEOUT_MS, REQUEST_DELAY_MS, SEARCH_KEYWORDS } from "../config.js";
 
 const BASE_URL = "https://topdev.vn";
-const JOB_TYPES_FILTERED = ["remote-jobs", "part-time", "freelance"];
+// Daily auto search: chỉ part-time + freelance (job chính 8h-18h UTC+7)
+const JOB_TYPES_FILTERED = ["part-time", "freelance"];
 const SEARCH_URL_FILTERED = `${BASE_URL}/it-jobs?q={kw}&type={type}`;
 const SEARCH_URL_ALL = `${BASE_URL}/it-jobs?q={kw}`;
 
-const DEFAULT_KEYWORDS = ["Power Platform", "SharePoint", "Power BI", "Data Engineer", "Power Automate"];
+const DEFAULT_KEYWORDS = [
+  "Power Platform", "SharePoint", "Power BI", "Data Engineer", "Power Automate",
+  "Data Analyst", "AI Engineer", "Machine Learning",
+];
 
 export async function scrapeTopDev(keywords = DEFAULT_KEYWORDS, { customSearch = false } = {}) {
   const results = [];

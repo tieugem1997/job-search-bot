@@ -1,9 +1,11 @@
 import axios from "axios";
 import { Job } from "./base.js";
-import { DEFAULT_HEADERS, REMOTEOK_API, REQUEST_TIMEOUT_MS, SEARCH_KEYWORDS } from "../config.js";
+import {
+  DEFAULT_HEADERS, REMOTEOK_API, REQUEST_TIMEOUT_MS,
+  SEARCH_KEYWORDS, FLEX_JOB_TYPES, matchesAny,
+} from "../config.js";
 
 export async function scrapeRemoteOK(keywords = SEARCH_KEYWORDS) {
-  const kwLower = keywords.map((k) => k.toLowerCase());
 
   let data;
   try {
@@ -28,7 +30,11 @@ export async function scrapeRemoteOK(keywords = SEARCH_KEYWORDS) {
     const jobUrl = j.url || `https://remoteok.io/remote-jobs/${j.id || ""}`;
 
     const searchable = `${title} ${tags.join(" ")} ${description}`.toLowerCase();
-    if (!kwLower.some((kw) => searchable.includes(kw))) continue;
+    if (!matchesAny(searchable, keywords)) continue;
+
+    // Job chính 8h-18h → chỉ lấy part-time / freelance / contract
+    const flexText = `${tags.join(" ")} ${description}`.toLowerCase();
+    if (!matchesAny(flexText, FLEX_JOB_TYPES)) continue;
 
     const salaryMin = parseFloat(j.salary_min) || null;
     const salaryMax = parseFloat(j.salary_max) || null;

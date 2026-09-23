@@ -71,7 +71,7 @@ function escHtml(text) {
 
 // ── Daily auto job search ──────────────────────────────────────────────────────
 async function runDailySearch() {
-  const { scrapeRemoteOK, scrapeJobicy, scrapeWeWorkRemotely, scrapeLinkedIn, scrapeITViec, scrapeTopDev } =
+  const { scrapeRemoteOK, scrapeJobicy, scrapeLinkedIn, scrapeITViec } =
     await import("./scrapers/index.js");
   const { SCORING } = await import("./config.js");
   const { rankJobs } = await import("./processors/cvMatcher.js");
@@ -83,10 +83,8 @@ async function runDailySearch() {
   const scrapers = [
     ["RemoteOK", scrapeRemoteOK],
     ["Jobicy", scrapeJobicy],
-    ["WeWorkRemotely", scrapeWeWorkRemotely],
     ["LinkedIn", scrapeLinkedIn],
     ["ITViec", scrapeITViec],
-    ["TopDev", scrapeTopDev],
   ];
 
   const allJobs = [];
@@ -125,7 +123,7 @@ const LOCATION_STOP = /\b(viet\s*nam|vietnam|ha\s*noi|ho\s*chi\s*minh|hcm|hà\s*
 
 // ── Custom search for /search command ─────────────────────────────────────────
 async function runCustomSearch(keywords, chatId) {
-  const { scrapeITViec, scrapeTopDev, scrapeLinkedIn } = await import("./scrapers/index.js");
+  const { scrapeITViec, scrapeLinkedIn } = await import("./scrapers/index.js");
   const { SCORING } = await import("./config.js");
   const { sendResults } = await import("./notifiers/telegram.js");
 
@@ -143,7 +141,7 @@ async function runCustomSearch(keywords, chatId) {
 
   const allJobs = [];
   const opts = { customSearch: true };
-  for (const [name, fn] of [["ITViec", scrapeITViec], ["TopDev", scrapeTopDev], ["LinkedIn", scrapeLinkedIn]]) {
+  for (const [name, fn] of [["ITViec", scrapeITViec], ["LinkedIn", scrapeLinkedIn]]) {
     try {
       const jobs = await fn(scraperKeywords, opts);
       logger.info(`  ${name}: ${jobs.length}`);
@@ -229,7 +227,8 @@ async function handleMessage(msg) {
       `<code>/search Designer fresher Vietnam</code>\n` +
       `<code>/search Data Analyst intern</code>\n` +
       `<code>/search Python backend remote</code>\n\n` +
-      `📅 Tự động tìm job lúc <b>8:00 SA</b> hàng ngày (Power BI, SharePoint, Data Engineer...)`,
+      `📅 Tự động tìm job lúc <b>8:00 SA</b> hàng ngày — Power Platform, Power BI, SharePoint, Data, AI\n` +
+      `🏷 Chỉ part-time / freelance / contract (không trùng giờ làm chính)`,
       chatId
     );
     return;
