@@ -1,7 +1,7 @@
 # Job Search Automation - Project Documentation
 
 ## Mục Tiêu
-Tự động tìm kiếm job remote/part-time liên quan đến SharePoint, PowerBI, Power Platform **lúc 8:00 AM hàng ngày**, gửi kết quả qua Telegram sắp xếp theo % match với CV.
+Tự động tìm kiếm job **part-time / freelance / contract** liên quan đến SharePoint, Power BI, Power Platform, Data, AI **lúc 8:05 AM (giờ VN) hàng ngày**, gửi kết quả qua Telegram sắp xếp theo % match với CV. Chạy trên GitHub Actions — không cần laptop bật.
 
 ## Owner
 - **Name**: Trong Nguyen Thanh
@@ -59,9 +59,14 @@ job-search-automation/
 - Power Platform, Power Apps, Power Automate, Power BI
 - SharePoint, SharePoint Online, Microsoft 365
 - Low Code, No Code, Dataverse, Copilot Studio
+- Data: Data Engineer, Data Analyst, Data Scientist, Data Pipeline
+- AI: AI Engineer, AI Developer, Machine Learning, Generative AI
 
 ## Job Type Filter
-- remote, part-time, freelance, contract, hybrid
+- **Chỉ** part-time, freelance, contract (remote part-time/freelance vẫn tính)
+- Loại full-time (kể cả remote full-time) vì job chính 8h-18h UTC+7
+- Board VN (ITViec, LinkedIn): lọc theo job type của từng site
+- Board toàn cầu (RemoteOK, Jobicy): lọc client-side theo `FLEX_JOB_TYPES` trong config.js
 
 ---
 
@@ -132,11 +137,17 @@ python main.py --test        # Test Telegram connection
 python main.py               # Run job search now
 ```
 
-### 5. Schedule Daily 8 AM (Windows)
-```powershell
-# Run as Administrator
-.\setup_scheduler.ps1
+### 5. Deploy lên GitHub Actions (chạy không cần laptop)
+```bash
+# 1. Set secrets trong GitHub repo:
+gh secret set TELEGRAM_BOT_TOKEN --repo tieugem1997/job-search-bot
+gh secret set TELEGRAM_CHAT_ID --repo tieugem1997/job-search-bot
+# 2. Push code — workflow .github/workflows/daily-search.yml tự chạy 08:05 VN mỗi ngày
+# 3. Chạy tay để test: repo → Actions → Daily Job Search (8AM VN) → Run workflow
 ```
+- Dedup cache `data/sent_jobs.json` được commit ngược về repo sau mỗi lần chạy
+- Đã tắt Task Scheduler local `PowerPlatformJobSearch` (tránh gửi trùng)
+- Xem chi tiết: DEPLOY.md
 
 ---
 
